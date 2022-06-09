@@ -1,23 +1,26 @@
-import datetime
-import os
-
 from src.organism import Organism
 from src.evaluator import Evaluator
 from src.geneticalgorithm import GeneticAlgorithm
+from util import genPSSM, calcScorePSSM
 
 from random import random, randrange, choice
-import string
-import math
 import time
+import math
 from typing import List
+from colorama import init, Fore
+init()
 
 
 DNA_Letters = ["G", "A", "T", "C"]
 motif_length = 10
 DNA_seq_path = "data/motif_seq_small.txt"
 DNA_seq_count = -1
+ConvergedThreshold = 10
+PSSM_zero_correction = 0.1
 
-outputDir = "output"
+consolePrint = False
+outputFile = "output/genetic-small.csv"
+runTest = 10
 
 class motifOrg(Organism):
     def __init__(self, random = True):
@@ -53,16 +56,37 @@ class motifOrg(Organism):
         for i, match in enumerate(self.matches):
             output.append(sequences[i])
             row = " " * match[0]
-            for l in self.DNA:
-                row += l
+            for j in range(len(self.DNA)):
+                l = self.DNA[j]
+                color = Fore.RED
+                if l == sequences[i][match[0]+j]:
+                    color = Fore.GREEN
+                row += color + l
 
+            row += Fore.WHITE
             row += " - " + str(match[1])
             output.append(row)
 
-        textfile = open(outputDir + "/" + str(gen) + "_" + str(self.fitness) + ".txt", "w")
-        for line in output:
-            textfile.write(line + "\n")
-        textfile.close()
+
+        print(" ")
+        for l in output:
+            print(l)
+        print(" ")
+
+    def getScore(self, sequences):
+        instances = []
+        for i, m in enumerate(self.matches):
+            seq = sequences[i]
+            instance = seq[m[0]:m[0] + motif_length]
+            instances.append(instance)
+
+        PSSM = genPSSM(instances, motif_length, PSSM_zero_correction)
+
+        total = 0
+        for inst in instances:
+            total += -math.log(calcScorePSSM(PSSM, inst))
+
+        return total
 
     def __repr__(self):
         return "".join(self.DNA)
@@ -122,30 +146,55 @@ class motifEval(Evaluator):
 
 def main():
     eval = motifEval()
-    GA = GeneticAlgorithm(motifOrg, eval, populationSize=64, eliteSize=1, cutoffSize=12)
-    GA.initGenerator()
+    GA = GeneticAlgorithm(motifOrg, eval, populationSize=128, eliteSize=1, tournamentSize=3, cutoffSize=0, mutationRate=0.02)
 
-    now = datetime.datetime.now().strftime("%d-%m-%H-%M_%S")
-    global outputDir
-    outputDir = os.path.join(os.getcwd(), outputDir, "out-" + now)
-    os.mkdir(outputDir)
+    test_results = []
 
-    starttime = time.perf_counter()
-    bfit = 0
-    best_org = None
+    for t in range(runTest):
+        print("test " + str(t + 1) + " / " + str(runTest))
+        GA.initGenerator()
 
-    while bfit != 1:
-        gen, avg, best_org = GA.nextGeneration()
+        conv_counter = 0
+        last = 0
+        elapconv = 0
 
-        if gen % 1 == 0:
+        starttime = time.perf_counter()
+
+        while True:
+            gen, avg, best_org = GA.nextGeneration()
+
             elapsed = time.perf_counter() - starttime
-            print("{}: best_fit {}, avg_fit {}, elapsed {:0.4f}".format(gen, best_org.getFitness(), avg, elapsed))
-            print(best_org)
-            if best_org.getFitness() > bfit:
-                best_org.save(gen, eval.sequences)
-                bfit = best_org.getFitness()
 
-    print(best_org, GA.getGen())
+            bfit = best_org.getFitness()
+
+            if bfit == last:
+                if conv_counter == 0:
+                    elapconv = elapsed
+                conv_counter += 1
+            else:
+                conv_counter = 0
+
+            if conv_counter >= ConvergedThreshold:
+                total = best_org.getScore(eval.sequences)
+                if consolePrint:
+                    print("{}: best_fit {}, score: {}, elapsed {:0.4f}".format(gen - ConvergedThreshold + 1, best_org.getFitness(), total, elapconv))
+                    best_org.save(gen, eval.sequences)
+                test_results.append([total, elapconv])
+                break
+
+            last = bfit
+            if consolePrint:
+                print("{}: best_fit {}, avg_fit {}, elapsed {:0.4f}".format(gen, bfit, avg, elapsed))
+
+    import csv
+    header = ["score", "time"]
+
+    with open(outputFile, 'w', newline='') as file:
+        writer = csv.writer(file)
+        writer.writerow(header)
+        for r in test_results:
+            writer.writerow(r)
+    file.close()
 
 
 if __name__ == '__main__':

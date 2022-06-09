@@ -15,12 +15,12 @@ DNA_Letters = ["G", "A", "T", "C"]
 motif_length = 10
 DNA_seq_path = "data/motif_seq_small.txt"
 DNA_seq_count = -1
-ConvergedThreshold = 10
+ConvergedThreshold = 25
 PSSM_zero_correction = 0.1
 
 consolePrint = False
-outputFile = "output/genetic-small.csv"
-runTest = 10
+outputFile = "output/genetic-small-256.csv"
+runTest = 50
 
 class motifOrg(Organism):
     def __init__(self, random = True):
@@ -146,7 +146,16 @@ class motifEval(Evaluator):
 
 def main():
     eval = motifEval()
-    GA = GeneticAlgorithm(motifOrg, eval, populationSize=128, eliteSize=1, tournamentSize=3, cutoffSize=0, mutationRate=0.02)
+
+    # verhoudingen te testen:
+    # popSize 16, tournament 2
+    # popSize 32, tournament 2
+    # popsize 64, tournament 3
+    # popsize 128, tournament 3
+    # popsize 256, tournament 6
+
+
+    GA = GeneticAlgorithm(motifOrg, eval, populationSize=256, eliteSize=1, tournamentSize=6, cutoffSize=0, mutationRate=0.02)
 
     test_results = []
 

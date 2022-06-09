@@ -16,7 +16,7 @@ ConvergedThreshold = 100
 
 consolePrint = False
 outputFile = "output/gibbs-small.csv"
-runTest = 10
+runTest = 50
 
 def load_sequences() -> List[str]:
     with open(DNA_seq_path) as file:

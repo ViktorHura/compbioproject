@@ -9,13 +9,13 @@ from util import genPSSM, calcScorePSSM
 
 DNA_Letters = ["A", "C", "G", "T"]
 motif_length = 10
-DNA_seq_path = "data/motif_seq_small.txt"
+DNA_seq_path = "data/motif_seq.txt"
 DNA_seq_count = -1
 PSSM_zero_correction = 0.1
 ConvergedThreshold = 100
 
 consolePrint = False
-outputFile = "output/gibbs-small.csv"
+outputFile = "output/gibbs-big.csv"
 runTest = 50
 
 def load_sequences() -> List[str]:

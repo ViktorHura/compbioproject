@@ -13,14 +13,14 @@ init()
 
 DNA_Letters = ["G", "A", "T", "C"]
 motif_length = 10
-DNA_seq_path = "data/motif_seq_small.txt"
+DNA_seq_path = "data/motif_seq.txt"
 DNA_seq_count = -1
 ConvergedThreshold = 25
 PSSM_zero_correction = 0.1
 
 consolePrint = False
-outputFile = "output/genetic-small-256.csv"
-runTest = 50
+outputFile = "output/genetic-big-128.csv"
+runTest = 10
 
 class motifOrg(Organism):
     def __init__(self, random = True):
@@ -155,7 +155,7 @@ def main():
     # popsize 256, tournament 6
 
 
-    GA = GeneticAlgorithm(motifOrg, eval, populationSize=256, eliteSize=1, tournamentSize=6, cutoffSize=0, mutationRate=0.02)
+    GA = GeneticAlgorithm(motifOrg, eval, populationSize=128, eliteSize=1, tournamentSize=3, cutoffSize=0, mutationRate=0.02)
 
     test_results = []
 

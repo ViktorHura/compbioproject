@@ -1,3 +1,17 @@
+### Configuration variables ###
+########################################################
+
+motif_length = 20                           # length of motif to search for
+DNA_seq_path = "data/UCSC_Cat_small.txt"    # path to file containin the sequences to search in
+PSSM_zero_correction = 0.1                  # the pseudo-frequency to give unseen bases in the PSSM matrix
+ConvergedThreshold = 200                    # how many iterations without score change must pass before concludes that the algorithm has converged
+
+consolePrint = True                         # print results and motif instances
+outputFile = "output/gibbs-cat_small.csv"   # path to output csv to store results of tests, empty string to not save
+runTest = 1                                 # how many times to re-run the algorithm
+
+#######################################################
+
 import math
 from random import randrange
 import time
@@ -5,18 +19,9 @@ from typing import List
 from colorama import init, Fore
 init()
 
-from util import genPSSM, calcScorePSSM
-
-DNA_Letters = ["A", "C", "G", "T"]
-motif_length = 10
-DNA_seq_path = "data/motif_seq.txt"
 DNA_seq_count = -1
-PSSM_zero_correction = 0.1
-ConvergedThreshold = 100
 
-consolePrint = False
-outputFile = "output/gibbs-big.csv"
-runTest = 50
+from util import genPSSM, calcScorePSSM
 
 def load_sequences() -> List[str]:
     with open(DNA_seq_path) as file:
@@ -128,26 +133,29 @@ def main():
 
             if conv_counter >= ConvergedThreshold:
                 if consolePrint:
-                    print("{}: score {}, elapsed {:0.4f}".format(gen - ConvergedThreshold + 1, total, elapconv))
+                    print("")
+                    print("Converged at:")
+                    print("{}: score {}, elapsed {:0.4f}".format(gen - ConvergedThreshold + 1, total/DNA_seq_count, elapconv))
                     printInstances(s, sequences)
-                test_results.append([total, elapconv])
+                test_results.append([total/DNA_seq_count, elapconv])
                 break
 
             last = total
 
             if consolePrint:
-                print("{}: score {}, elapsed {:0.4f}".format(gen, total, elapsed))
+                print("{}: score {}, elapsed {:0.4f}".format(gen, total/DNA_seq_count, elapsed))
             gen += 1
 
-    import csv
-    header = ["score", "time"]
+    if outputFile != "":
+        import csv
+        header = ["score", "time"]
 
-    with open(outputFile, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(header)
-        for r in test_results:
-            writer.writerow(r)
-    file.close()
+        with open(outputFile, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            for r in test_results:
+                writer.writerow(r)
+        file.close()
 
 
 if __name__ == '__main__':

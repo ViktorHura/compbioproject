@@ -11,7 +11,6 @@ class GeneticAlgorithm:
     def __init__(self, organismClass: type, evaluator: Evaluator,
                  populationSize: int = 128,
                  eliteSize: int = 1,
-                 useTournament: bool = True,
                  cutoffSize: int = 25,
                  tournamentSize: int = 3,
                  mutationRate: float = 0.02):
@@ -21,7 +20,6 @@ class GeneticAlgorithm:
         self.popSize: int = populationSize
         self.elite: int = eliteSize
         self.cutoff: int = cutoffSize
-        self.useTurn = useTournament
         self.tournament: int = tournamentSize
         self.mtnRate: float = mutationRate
 
@@ -60,14 +58,7 @@ class GeneticAlgorithm:
 
     def nextGeneration(self, getOrg:bool = True) -> Tuple[int, float, Organism]:
         # evaluate the current generation
-        #starttime = time.perf_counter()
-
         avg_fit = self.evaluator.evalMulti(self.population)
-
-        # if self.gen % 1 == 0:
-        #     print("Fitness Calc took {}".format(time.perf_counter()-starttime))
-
-        #starttime = time.perf_counter()
 
         self._sortPop()  # sort by fitness
 
@@ -75,46 +66,22 @@ class GeneticAlgorithm:
         if getOrg:
             best_org: Organism = copy(self.population[0])  # save a copy of this gen's best org
 
-        # if self.gen % 1 == 0:
-        #     print("Sort took {}".format(time.perf_counter() - starttime))
-
-        #starttime = time.perf_counter()
         # natural selection
         next_gen: List[Organism] = []
 
-        if self.useTurn:
-            for i in range(self.popSize):
-                if i < self.elite:
-                    next_gen.append(self.population[i])
-                else:
-                    parent0: Organism = self.population[self._tournamentSelect()]
-                    parent1: Organism = self.population[self._tournamentSelect()]
+        for i in range(self.popSize):
+            if i < self.elite:
+                next_gen.append(self.population[i])
+            else:
+                parent0: Organism = self.population[self._tournamentSelect()]
+                parent1: Organism = self.population[self._tournamentSelect()]
 
-                    child: Organism = parent0.crossover(parent1)
-                    child.mutate(self.mtnRate)
+                child: Organism = parent0.crossover(parent1)
+                child.mutate(self.mtnRate)
 
-                    next_gen.append(child)
-        else:
-            pool = range(self.popSize - self.cutoff)
-            wts = [self.population[x].getFitness() for x in pool]
-
-            parents = random.choices(pool, weights=wts, k=(self.popSize-self.elite)*2)
-            for i in range(self.popSize):
-                if i < self.elite:
-                    next_gen.append(self.population[i])
-                else:
-                    ind = (i-self.elite)*2
-                    parent0: Organism = self.population[parents[ind]]
-                    parent1: Organism = self.population[parents[ind+1]]
-
-                    child: Organism = parent0.crossover(parent1)
-                    child.mutate(self.mtnRate)
-
-                    next_gen.append(child)
+                next_gen.append(child)
 
         self.population = next_gen
         self.gen += 1
-        # if self.gen % 1 == 0:
-        #     print("Next gen took {}".format(time.perf_counter() - starttime))
 
         return self.gen - 1, avg_fit, best_org

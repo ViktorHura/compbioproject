@@ -1,3 +1,23 @@
+### Configuration variables ###
+########################################################
+
+motif_length = 20                           # length of motif to search for
+DNA_seq_path = "data/UCSC_Cat_small.txt"    # path to file containin the sequences to search in
+PSSM_zero_correction = 0.1                  # the pseudo-frequency to give unseen bases in the PSSM matrix
+ConvergedThreshold = 20                     # how many iterations without score change must pass before concludes that the algorithm has converged
+
+consolePrint = True                         # print results and motif instances
+outputFile = "output/genetic-cat_small.csv" # path to output csv to store results of tests, empty string to not save
+runTest = 1                                 # how many times to re-run the algorithm
+
+population_size = 128                       # population size for genetic algorithm
+tournament_size = 3                         # tournament size for tournament selection
+elite_size = 1                              # number of elite organisms to always copy to the next generation
+mutation_rate = 0.02                        # mutation rate for genetic algorithm
+
+#######################################################
+
+
 from src.organism import Organism
 from src.evaluator import Evaluator
 from src.geneticalgorithm import GeneticAlgorithm
@@ -10,17 +30,8 @@ from typing import List
 from colorama import init, Fore
 init()
 
-
-DNA_Letters = ["G", "A", "T", "C"]
-motif_length = 10
-DNA_seq_path = "data/motif_seq.txt"
 DNA_seq_count = -1
-ConvergedThreshold = 25
-PSSM_zero_correction = 0.1
-
-consolePrint = False
-outputFile = "output/genetic-big-128.csv"
-runTest = 10
+DNA_Letters = ["G", "A", "T", "C"]
 
 class motifOrg(Organism):
     def __init__(self, random = True):
@@ -54,7 +65,7 @@ class motifOrg(Organism):
         output = []
 
         for i, match in enumerate(self.matches):
-            output.append(sequences[i])
+            output.append(Fore.WHITE + sequences[i])
             row = " " * match[0]
             for j in range(len(self.DNA)):
                 l = self.DNA[j]
@@ -62,11 +73,9 @@ class motifOrg(Organism):
                 if l == sequences[i][match[0]+j]:
                     color = Fore.GREEN
                 row += color + l
-
             row += Fore.WHITE
             row += " - " + str(match[1])
             output.append(row)
-
 
         print(" ")
         for l in output:
@@ -146,16 +155,7 @@ class motifEval(Evaluator):
 
 def main():
     eval = motifEval()
-
-    # verhoudingen te testen:
-    # popSize 16, tournament 2
-    # popSize 32, tournament 2
-    # popsize 64, tournament 3
-    # popsize 128, tournament 3
-    # popsize 256, tournament 6
-
-
-    GA = GeneticAlgorithm(motifOrg, eval, populationSize=128, eliteSize=1, tournamentSize=3, cutoffSize=0, mutationRate=0.02)
+    GA = GeneticAlgorithm(motifOrg, eval, populationSize=population_size, eliteSize=elite_size, tournamentSize=tournament_size, cutoffSize=0, mutationRate=mutation_rate)
 
     test_results = []
 
@@ -186,24 +186,27 @@ def main():
             if conv_counter >= ConvergedThreshold:
                 total = best_org.getScore(eval.sequences)
                 if consolePrint:
-                    print("{}: best_fit {}, score: {}, elapsed {:0.4f}".format(gen - ConvergedThreshold + 1, best_org.getFitness(), total, elapconv))
+                    print("")
+                    print("Converged at:")
+                    print("{}: best_fit {}, PSSM score: {}, elapsed {:0.4f}".format(gen - ConvergedThreshold + 1, best_org.getFitness(), total/DNA_seq_count, elapconv))
                     best_org.save(gen, eval.sequences)
-                test_results.append([total, elapconv])
+                test_results.append([total/DNA_seq_count, elapconv])
                 break
 
             last = bfit
             if consolePrint:
                 print("{}: best_fit {}, avg_fit {}, elapsed {:0.4f}".format(gen, bfit, avg, elapsed))
 
-    import csv
-    header = ["score", "time"]
+    if outputFile != "":
+        import csv
+        header = ["score", "time"]
 
-    with open(outputFile, 'w', newline='') as file:
-        writer = csv.writer(file)
-        writer.writerow(header)
-        for r in test_results:
-            writer.writerow(r)
-    file.close()
+        with open(outputFile, 'w', newline='') as file:
+            writer = csv.writer(file)
+            writer.writerow(header)
+            for r in test_results:
+                writer.writerow(r)
+        file.close()
 
 
 if __name__ == '__main__':

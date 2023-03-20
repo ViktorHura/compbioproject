@@ -3,6 +3,7 @@
 
 This is the source code for our project for `1000WETCOB Inleiding tot computationele biologie` 
 
+The [report](https://github.com/ViktorHura/compbioproject/blob/main/report/GeneticMotifs_report.pdf) and [presentation](https://github.com/ViktorHura/compbioproject/blob/main/report/presentation.pdf) can be found in the `report/` directory
 
 ## Installation
 
